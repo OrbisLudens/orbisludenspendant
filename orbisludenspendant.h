@@ -8,7 +8,7 @@
 // ------------------- CONFIG SECTION ---------------------
 
 // Which pin on the Arduino is connected to the NeoPixels?
-#define PIN            3
+#define PIN            14
 // How many NeoPixels are attached to the Arduino?
 #define NUMPIXELS      12
 

@@ -63,13 +63,13 @@ void loop() {
           health = reshealth[pos];
           Serial.printf("%d: faction color (%d health)\n", i, health);
           int color[3] = {0, 0, 0};
-          color[faction]=health+20;
+          color[faction]=health;
           setPixel(i, color[0], color[1], color[2]);
 
         } else {
           // light led with white or clear led if the resonator is not captured
           Serial.printf("%d: grey color!\n", i);
-          setPixel(i, 20, 20, 20);
+          setPixel(i, 2, 2, 2);
         }
       }
     }
@@ -107,6 +107,7 @@ int isvalueinarray(String val, String arr[], int size){
 void setPixel(int pos, int r, int g, int b) {
   Serial.printf("Set Pixel %d to (%d, %d, %d)\n", pos, r, g, b);
   pixels.setPixelColor(pos, r, g, b);
+  pixels.show();
 }
 
 
