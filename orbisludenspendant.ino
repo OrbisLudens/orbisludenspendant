@@ -13,14 +13,9 @@ void setup () {
   Serial.begin(BAUD_RATE); // Set serial Speed
   Serial.println(); // newline to get rid of the serial garbage
 
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-
-    delay(1000);
-    Serial.print("Connecting..");
-
-  }
+  WiFiManager wifiManager;
+  wifiManager.autoConnect(wm_ssid, wm_password);
+  Serial.println("connected");
 }
 
 void loop() {
