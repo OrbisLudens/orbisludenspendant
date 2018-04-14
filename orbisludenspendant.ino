@@ -13,8 +13,70 @@ void setup () {
   Serial.begin(BAUD_RATE); // Set serial Speed
   Serial.println(); // newline to get rid of the serial garbage
 
+
+  // From https://github.com/tzapu/WiFiManager/tree/master/examples/AutoConnectWithFSParameters
+  //read configuration from FS json
+  Serial.println("mounting FS...");
+
+  if (SPIFFS.begin()) {
+    Serial.println("mounted file system");
+    if (SPIFFS.exists("/config.json")) {
+      //file exists, reading and loading
+      Serial.println("reading config file");
+      File configFile = SPIFFS.open("/config.json", "r");
+      if (configFile) {
+        Serial.println("opened config file");
+        size_t size = configFile.size();
+        // Allocate a buffer to store contents of the file.
+        std::unique_ptr<char[]> buf(new char[size]);
+
+        configFile.readBytes(buf.get(), size);
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject& json = jsonBuffer.parseObject(buf.get());
+        json.printTo(Serial);
+        if (json.success()) {
+          Serial.println("\nparsed json");
+          strcpy(tecurl, json["tecurl"]);
+        } else {
+          Serial.println("failed to load json config");
+        }
+      }
+    }
+  } else {
+    Serial.println("failed to mount FS");
+  }
+  //end read
+
+  // Initialize and configure Wifimanager
   WiFiManager wifiManager;
+  WiFiManagerParameter tecthulu_url("tecurl", "tecthulu url", tecurl, 100);
+  wifiManager.setSaveConfigCallback(saveConfigCallback);
+  wifiManager.addParameter(&tecthulu_url);
+
+  // try to connect or spawn AP if no saved values
   wifiManager.autoConnect(wm_ssid, wm_password);
+
+  //read updated parameters
+  strcpy(tecurl, tecthulu_url.getValue());
+
+   //save the custom parameters to FS
+  if (shouldSaveConfig) {
+    Serial.println("saving config");
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& json = jsonBuffer.createObject();
+    json["tecurl"] = tecurl;
+    
+    File configFile = SPIFFS.open("/config.json", "w");
+    if (!configFile) {
+      Serial.println("failed to open config file for writing");
+    }
+
+    json.printTo(Serial);
+    json.printTo(configFile);
+    configFile.close();
+    //end save
+  }
+
   Serial.println("connected");
 }
 
@@ -29,7 +91,7 @@ void loop() {
 
     HTTPClient http;  //Declare an object of class HTTPClient
 
-    http.begin(url);  //Specify request destination
+    http.begin(tecurl);  //Specify request destination
     int httpCode = http.GET();  //Send the request
 
     if (httpCode > 0) { //Check the returning code
@@ -76,6 +138,13 @@ void loop() {
   delay(5000);    //Send a request every 5 seconds
 
 }
+
+//callback notifying us of the need to save config
+void saveConfigCallback () {
+  Serial.println("Should save config");
+  shouldSaveConfig = true;
+}
+
 
 // Find the LED according to the position
 int findLedPosition(String pos) {

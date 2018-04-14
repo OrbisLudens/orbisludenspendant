@@ -1,3 +1,4 @@
+#include <FS.h> 
 #include <ESP8266HTTPClient.h>
 #include <Adafruit_NeoPixel.h>
 #include <ESP8266WiFi.h>
@@ -21,4 +22,7 @@ const char* resonatorleds[] = { "N", "NE", "mod", "E", "SE", "mod", "S", "SW", "
 
 // Serial Console Speed
 const unsigned long BAUD_RATE = 115200;
+
+//flag for saving data
+bool shouldSaveConfig = false;
 
