@@ -1,5 +1,5 @@
-// WIFI SSID
-const char* ssid = "MYESSID";
-// WIFI Password
-const char* password = "MYPASSWORD";
+// AP SSID if nothing is configured
+const char* wm_ssid = "ORBISLUDENSPENDANT";
+// WIFI password of the AP
+const char* wm_password = "orbisludens123";
 
