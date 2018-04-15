@@ -7,11 +7,17 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ80
 
 void setup () {
 
+  pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
+  digitalWrite(LED_BUILTIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
+  
   pixels.begin(); // This initializes the NeoPixel library.
   pixels.show(); // Initialize all pixels to 'off'
 
   Serial.begin(BAUD_RATE); // Set serial Speed
   Serial.println(); // newline to get rid of the serial garbage
+
+  //clean FS, for testing
+  // SPIFFS.format();
 
 
   // From https://github.com/tzapu/WiFiManager/tree/master/examples/AutoConnectWithFSParameters
@@ -51,7 +57,16 @@ void setup () {
   WiFiManager wifiManager;
   WiFiManagerParameter tecthulu_url("tecurl", "tecthulu url", tecurl, 100);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
+  wifiManager.setAPCallback(configModeCallback);
   wifiManager.addParameter(&tecthulu_url);
+
+   if (drd.detectDoubleReset()) {
+    Serial.println("Double Reset Detected");
+    wifiManager.startConfigPortal(wm_ssid, wm_password);
+  } else {
+    Serial.println("No Double Reset Detected");
+    wifiManager.autoConnect(wm_ssid, wm_password);
+  }
 
   // try to connect or spawn AP if no saved values
   wifiManager.autoConnect(wm_ssid, wm_password);
@@ -78,6 +93,8 @@ void setup () {
   }
 
   Serial.println("connected");
+  digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
+  drd.stop();
 }
 
 void loop() {
@@ -143,6 +160,17 @@ void loop() {
 void saveConfigCallback () {
   Serial.println("Should save config");
   shouldSaveConfig = true;
+}
+
+// callback to enter config mode if reset button is pressed twice
+void configModeCallback (WiFiManager *myWiFiManager) {
+  Serial.println("Entered config mode");
+  Serial.println(WiFi.softAPIP());
+
+  // You could indicate on your screen or by an LED you are in config mode here
+  // We don't want the next time the boar resets to be considered a double reset
+  // so we remove the flag
+  drd.stop();
 }
 
 
