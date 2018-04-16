@@ -35,3 +35,18 @@ Now choose the Board in the Board Manager:
 * Select the "Wemos D1 R2 & mini" Board
 * Select the Port
 
+
+## Configuration
+You can configure only the tecthulu API URL in url.h. On the first run an access point will be spawned where the configuration captive portal is available to configure the Wifi AP the ESP connects to. 
+
+* Copy url.h.example to url.h and configure the URL
+* Copy wifi.h.example to wifi.h and configure the SSID and the password for the AP which will be spawned if no configuration is found.
+
+
+When the sketch is compiled and pushed on the device it will spawn the configured access point after booting up. Connect to the AP, open the browser (all URLs will be redirected to the config portal) and configure the WIFI and the tecthulu URL (in case it has changed). 
+
+The AP will always spawn if no valid wifi configuration is spawned
+
+### Reconfigure
+To manually spawn the AP double press the reset button. The device will boot up again and spawn the AP.
+
