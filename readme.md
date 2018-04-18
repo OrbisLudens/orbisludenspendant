@@ -50,3 +50,10 @@ The AP will always spawn if no valid wifi configuration is spawned
 ### Reconfigure
 To manually spawn the AP double press the reset button. The device will boot up again and spawn the AP.
 
+
+## What does it do
+The Orbis Ludent Pendant is an pendant like object which interacts with the Orbis Ludent Portal on the Osiris Ephiphany Night Event on Schloss Kaltenberg (Ingress related event). 
+Whenever the portal resonators change the pendant show that change with 8 ultrabright leds. This works only in the Range of the Portal (technical: The configured Wifi AP).
+
+### Example
+Prototype with a 12 LED Ring (4 for mods): https://www.youtube.com/watch?v=4cp5gsIQYR0
