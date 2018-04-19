@@ -1,2 +1,2 @@
 // URL to fetch
-const char* url = "http://tecthulu.niantic.com/v1/portal/get"
+char tecurl[100] = "http://tecthulu.niantic.com/portal/json";
