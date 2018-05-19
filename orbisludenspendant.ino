@@ -16,12 +16,13 @@ void setup () {
   Serial.begin(BAUD_RATE); // Set serial Speed
   Serial.println(); // newline to get rid of the serial garbage
 
+
   //clean FS, for testing
   // SPIFFS.format();
 
 
   // From https://github.com/tzapu/WiFiManager/tree/master/examples/AutoConnectWithFSParameters
-  //read configuration from FS json
+  // read configuration from FS json
   Serial.println("mounting FS...");
 
   if (SPIFFS.begin()) {
@@ -43,6 +44,7 @@ void setup () {
         if (json.success()) {
           Serial.println("\nparsed json");
           strcpy(tecurl, json["tecurl"]);
+          strcpy(offline_mode, json["offline_mode"]);
         } else {
           Serial.println("failed to load json config");
         }
@@ -56,11 +58,14 @@ void setup () {
   // Initialize and configure Wifimanager
   WiFiManager wifiManager;
   WiFiManagerParameter tecthulu_url("tecurl", "tecthulu url", tecurl, 100);
+  WiFiManagerParameter wifi_offline_mode("offline_mode", "offline mode enabled (yes/no)", offline_mode, 3);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.setAPCallback(configModeCallback);
   wifiManager.addParameter(&tecthulu_url);
+  wifiManager.addParameter(&wifi_offline_mode);
 
-   if (drd.detectDoubleReset()) {
+  // Double Reset == Enter Config AP
+  if (drd.detectDoubleReset()) {
     Serial.println("Double Reset Detected");
     wifiManager.startConfigPortal(wm_ssid, wm_password);
   } else {
@@ -68,18 +73,26 @@ void setup () {
     wifiManager.autoConnect(wm_ssid, wm_password);
   }
 
-  // try to connect or spawn AP if no saved values
-  wifiManager.autoConnect(wm_ssid, wm_password);
-
   //read updated parameters
   strcpy(tecurl, tecthulu_url.getValue());
+  strcpy(offline_mode, wifi_offline_mode.getValue());
 
+  if (String(offline_mode) == "y") {
+    WiFi.mode(WIFI_OFF);
+    Serial.println("offline mode enabled");
+  } else {
+    // try to connect or spawn AP if no saved values
+    // We disable autoconnect so the Config portal is only activated by double reset
+    // wifiManager.autoConnect(wm_ssid, wm_password);
+    Serial.println("connected");
+  }
    //save the custom parameters to FS
   if (shouldSaveConfig) {
     Serial.println("saving config");
     DynamicJsonBuffer jsonBuffer;
     JsonObject& json = jsonBuffer.createObject();
     json["tecurl"] = tecurl;
+    json["offline_mode"] = offline_mode;
     
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
@@ -91,8 +104,6 @@ void setup () {
     configFile.close();
     //end save
   }
-
-  Serial.println("connected");
   digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
   drd.stop();
 }
@@ -104,7 +115,12 @@ void loop() {
   int health;
 
   Serial.println("---");
-  if (WiFi.status() == WL_CONNECTED) { //Check WiFi connection status
+  Serial.println(offline_mode);
+  if (String(offline_mode) == "y" ) {
+    // call the offline mode
+    offlineMode();
+    delay(1000);    // loop through the offline cycle 
+  } else if (WiFi.status() == WL_CONNECTED) { //Check WiFi connection status
 
     HTTPClient http;  //Declare an object of class HTTPClient
 
@@ -147,13 +163,9 @@ void loop() {
         }
       }
     }
-
     http.end();   //Close connection
-
+    delay(5000);    //Send a request every 5 seconds
   }
-
-  delay(5000);    //Send a request every 5 seconds
-
 }
 
 //callback notifying us of the need to save config
@@ -200,6 +212,11 @@ void setPixel(int pos, int r, int g, int b) {
   Serial.printf("Set Pixel %d to (%d, %d, %d)\n", pos, r, g, b);
   pixels.setPixelColor(pos, r, g, b);
   pixels.show();
+}
+
+
+void offlineMode() {
+  Serial.println("We have entered the offline mode!");
 }
 
 
