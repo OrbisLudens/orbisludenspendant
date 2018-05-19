@@ -29,9 +29,6 @@
 #include <DoubleResetDetector.h>
 
 
-//Define the offline_mode (y/n). Defaults to "n" (no)
-char offline_mode[2] = "n";
-
 //flag for saving data
 bool shouldSaveConfig = false;
 
@@ -45,6 +42,19 @@ bool shouldSaveConfig = false;
 
 // Array for a 8 LED Neopixel ring
 const char* resonatorleds[] = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+
+//Define the offline_mode (y/n). Defaults to "n" (no)
+char offline_mode[2] = "n";
+
+//Define the offline_faction (e/r). Defaults to "e"
+char offline_faction[2] = "e";
+
+
+// Defines for the offline mode
+int cur_bright;
+int bright_diff = 10;
+uint32_t pulsecolor;
+
 
 // Serial Console Speed
 const unsigned long BAUD_RATE = 115200;
