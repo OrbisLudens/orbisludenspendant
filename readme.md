@@ -38,23 +38,28 @@ Now choose the Board in the Board Manager:
 
 
 ## Configuration
-You can configure only the tecthulu API URL in url.h. On the first run an access point will be spawned where the configuration captive portal is available to configure the Wifi AP the ESP connects to.
 
 * Copy url.h.example to url.h and configure the URL
-* Copy wifi.h.example to wifi.h and configure the SSID and the password for the AP which will be spawned if no configuration is found.
+* Copy wifi.h.example to wifi.h and configure the SSID and the password for the AP which will be spawned if a double reset is detected
 
+### The configuration AP
+The device can be configured by pressing the reset button 2 times within 3 seconds. After that an access point (ssid, password configured in wifi.h) spawns with a capative portal and redirects all traffic to the configuration URL. The main configuration can be found under "Wifi Configuration".
 
-When the sketch is compiled and pushed on the device it will spawn the configured access point after booting up. Connect to the AP, open the browser (all URLs will be redirected to the config portal) and configure the WIFI and the tecthulu URL (in case it has changed).
+In the Wifi Configuration tab you can configure the AP the pendant should connect to. Furthermore the URL of the Tecthulu Device can be specified.
 
-The AP will always spawn if no valid wifi configuration is spawned
+If you want to operate in offline mode you can set "offline_mode" to y or n (yes or no) and the color (r for resistance, e for enlightend, everything else will set the color to white). In the offline mode all leds will pulse. If you want to disable the offline mode you need to reenter the configuration gui and set offline_mode to n.
+
+All data will be saved in the eeprom of the arduino. To delete this data you need to recompile the code and uncomment the line "SPIFFS.format()"
+
 
 ### Reconfigure
 To manually spawn the AP double press the reset button. The device will boot up again and spawn the AP.
 
-
 ## What does it do
 The Orbis Ludent Pendant is an pendant like object which interacts with the Orbis Ludent Portal on the Osiris Ephiphany Night Event on Schloss Kaltenberg (Ingress related event).
 Whenever the portal resonators change the pendant show that change with 8 ultrabright leds. This works only near the Portal (technical: within the range of the configured Wifi AP).
+
+The device can be set to an offline mode where it pulses in the chosen faction color.
 
 ### Example
 Prototype with a 12 LED Ring (4 for mods, not used): https://www.youtube.com/watch?v=4cp5gsIQYR0
