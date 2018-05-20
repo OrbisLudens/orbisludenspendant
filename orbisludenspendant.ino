@@ -95,7 +95,7 @@ void loop() {
       StaticJsonBuffer<2000> JSONBuffer; // 2000 byte is the max length of a message
       JsonObject& tec_answer = JSONBuffer.parseObject(payload);
 
-      int faction = (int) tec_answer["result"]["controllingFaction"]; // Controlling faction. 0=none, 1=ENL, 2=RES
+      int faction = factionMapping(tec_answer["result"]["controllingFaction"]); // Controlling faction. 0=none, 1=ENL, 2=RES
       Serial.println(faction);
       Serial.println(tec_answer["result"]["resonators"].as<String>());
       int deployedresos = tec_answer["result"]["resonators"].size(); // Number of deployed resonators
@@ -196,6 +196,19 @@ void saveConfig() {
 
 }
 
+
+// faction mapping, to get an integer value for the faction. The int will be used to address the 
+// setPixelColor from the Neopixel lib
+// None: 0, Enl: 1, Res: 2
+int factionMapping(String faction) {
+  if (faction == "Enlightened" || faction == "enlightened") {
+    return 1;
+  }
+  if (faction == "Resistance" || faction == "resistance") {
+    return 2;
+  }
+  return 0;
+}
 
 // Find the LED according to the position
 int findLedPosition(String pos) {
