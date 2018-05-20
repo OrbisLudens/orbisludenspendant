@@ -26,7 +26,7 @@
 #include <DNSServer.h>
 
 // Recognizes double press of reset button to reenter config mode
-#include <DoubleResetDetector.h>
+#include <DoubleResetDetect.h>
 
 
 //flag for saving data
@@ -44,7 +44,7 @@ bool shouldSaveConfig = false;
 const char* resonatorleds[] = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
 
 //Define the offline_mode (y/n). Defaults to "n" (no)
-char offline_mode[2] = "n";
+char offline_mode[2] = "y";
 
 //Define the offline_faction (e/r). Defaults to "e"
 char offline_faction[2] = "e";
@@ -61,11 +61,10 @@ const unsigned long BAUD_RATE = 115200;
 
 // Number of seconds after reset during which a
 // subseqent reset will be considered a double reset.
-// This sketch uses drd.stop() rather than relying on the timeout
-#define DRD_TIMEOUT 10
+#define DRD_TIMEOUT 3.0
 
 // RTC Memory Address for the DoubleResetDetector to use
-#define DRD_ADDRESS 0
+#define DRD_ADDRESS 0x00
 
-DoubleResetDetector drd(DRD_TIMEOUT, DRD_ADDRESS);
+DoubleResetDetect drd(DRD_TIMEOUT, DRD_ADDRESS);
 

@@ -26,37 +26,8 @@ void setup () {
   // From https://github.com/tzapu/WiFiManager/tree/master/examples/AutoConnectWithFSParameters
   // read configuration from FS json
   Serial.println("mounting FS...");
+  loadConfig();
 
-  if (SPIFFS.begin()) {
-    Serial.println("mounted file system");
-    if (SPIFFS.exists("/config.json")) {
-      //file exists, reading and loading
-      Serial.println("reading config file");
-      File configFile = SPIFFS.open("/config.json", "r");
-      if (configFile) {
-        Serial.println("opened config file");
-        size_t size = configFile.size();
-        // Allocate a buffer to store contents of the file.
-        std::unique_ptr<char[]> buf(new char[size]);
-
-        configFile.readBytes(buf.get(), size);
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& json = jsonBuffer.parseObject(buf.get());
-        json.printTo(Serial);
-        if (json.success()) {
-          Serial.println("\nparsed json");
-          strcpy(tecurl, json["tecurl"]);
-          strcpy(offline_mode, json["offline_mode"]);
-          //strcpy(offline_faction, json["offline_faction"]);
-        } else {
-          Serial.println("failed to load json config");
-        }
-      }
-    }
-  } else {
-    Serial.println("failed to mount FS");
-  }
-  //end read
 
   // Initialize and configure Wifimanager
   WiFiManager wifiManager;
@@ -70,12 +41,11 @@ void setup () {
     wifiManager.addParameter(&wifi_offline_faction);
 
   // Double Reset == Enter Config AP
-  if (drd.detectDoubleReset()) {
+  if (drd.detect()) {
     Serial.println("Double Reset Detected");
     wifiManager.startConfigPortal(wm_ssid, wm_password);
   } else {
     Serial.println("No Double Reset Detected");
-    wifiManager.autoConnect(wm_ssid, wm_password);
   }
 
   //read updated parameters
@@ -94,25 +64,9 @@ void setup () {
   }
    //save the custom parameters to FS
   if (shouldSaveConfig) {
-    Serial.println("saving config");
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
-    json["tecurl"] = tecurl;
-    json["offline_mode"] = offline_mode;
-    json["offline_faction"] = offline_faction;
-    
-    File configFile = SPIFFS.open("/config.json", "w");
-    if (!configFile) {
-      Serial.println("failed to open config file for writing");
-    }
-
-    json.printTo(Serial);
-    json.printTo(configFile);
-    configFile.close();
-    //end save
+    saveConfig();
   }
   digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
-  drd.stop();
 }
 
 void loop() {
@@ -141,15 +95,15 @@ void loop() {
       StaticJsonBuffer<2000> JSONBuffer; // 2000 byte is the max length of a message
       JsonObject& tec_answer = JSONBuffer.parseObject(payload);
 
-      int faction = (int) tec_answer["status"]["controllingFaction"]; // Controlling faction. 0=none, 1=ENL, 2=RES
+      int faction = (int) tec_answer["result"]["controllingFaction"]; // Controlling faction. 0=none, 1=ENL, 2=RES
       Serial.println(faction);
-      Serial.println(tec_answer["status"]["resonators"].as<String>());
-      int deployedresos = tec_answer["status"]["resonators"].size(); // Number of deployed resonators
+      Serial.println(tec_answer["result"]["resonators"].as<String>());
+      int deployedresos = tec_answer["result"]["resonators"].size(); // Number of deployed resonators
       Serial.printf("Deployed Resos: %d\n", deployedresos);
       // Iterate over the json resonator subarray and get the health and the position
       for (int i = 0; i < deployedresos; i++) {
-        reshealth[i] = (int) tec_answer["status"]["resonators"][i]["health"];
-        portalres[i] = tec_answer["status"]["resonators"][i]["position"].as<String>();
+        reshealth[i] = (int) tec_answer["result"]["resonators"][i]["health"];
+        portalres[i] = tec_answer["result"]["resonators"][i]["position"].as<String>();
       }
       // Now iterate over the pixels and see if we have a resonator to show
       for (int i = 0; i < NUMPIXELS; i++) {
@@ -185,11 +139,61 @@ void saveConfigCallback () {
 void configModeCallback (WiFiManager *myWiFiManager) {
   Serial.println("Entered config mode");
   Serial.println(WiFi.softAPIP());
+}
 
-  // You could indicate on your screen or by an LED you are in config mode here
-  // We don't want the next time the boar resets to be considered a double reset
-  // so we remove the flag
-  drd.stop();
+// Loads the config from the eeprom
+void loadConfig() {
+  if (SPIFFS.begin()) {
+    Serial.println("mounted file system");
+    if (SPIFFS.exists("/config.json")) {
+      //file exists, reading and loading
+      Serial.println("reading config file");
+      File configFile = SPIFFS.open("/config.json", "r");
+      if (configFile) {
+        Serial.println("opened config file");
+        size_t size = configFile.size();
+        // Allocate a buffer to store contents of the file.
+        std::unique_ptr<char[]> buf(new char[size]);
+
+        configFile.readBytes(buf.get(), size);
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject& json = jsonBuffer.parseObject(buf.get());
+        json.printTo(Serial);
+        if (json.success()) {
+          Serial.println("\nparsed json");
+          strcpy(tecurl, json["tecurl"]);
+          strcpy(offline_mode, json["offline_mode"]);
+          //strcpy(offline_faction, json["offline_faction"]);
+        } else {
+          Serial.println("failed to load json config");
+        }
+      }
+    }
+  } else {
+    Serial.println("failed to mount FS");
+  }
+  //end read
+}
+
+// Writes the config to the eeprom
+void saveConfig() {
+ Serial.println("saving config");
+  DynamicJsonBuffer jsonBuffer;
+  JsonObject& json = jsonBuffer.createObject();
+  json["tecurl"] = tecurl;
+  json["offline_mode"] = offline_mode;
+  json["offline_faction"] = offline_faction;
+  
+  File configFile = SPIFFS.open("/config.json", "w");
+  if (!configFile) {
+    Serial.println("failed to open config file for writing");
+  }
+
+  json.printTo(Serial);
+  json.printTo(configFile);
+  configFile.close();
+  //end save
+
 }
 
 
@@ -234,8 +238,10 @@ void offlineMode() {
   FactionPulse(80, false);
 }
 
-
 // FactionPulse for offline mode
+// We change the overall brightness. This is not recommended but for this is the only
+// task and we do not run into timing issues we can use it here.
+// Normally we change the brightness within each Led with setPixelColor()
 void FactionPulse(uint8_t wait, boolean fade) {
   uint16_t i,j;
   for(j=0; j<40; j++) {
@@ -251,6 +257,7 @@ void FactionPulse(uint8_t wait, boolean fade) {
   }
 }
 
+// Pulse brightness
 void PulseBrightness(uint8_t step, boolean fade, uint8_t maxb) {
   if (fade && (cur_bright+bright_diff) <= step ) {
     cur_bright=0;

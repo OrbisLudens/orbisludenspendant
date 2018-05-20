@@ -20,7 +20,7 @@ To compile the sketch the following libraries need to be installed:
 * WifiManager (tzapu)
 * Adafruit Neopixel
 * DNSServer
-* DoubleResetDetector
+* DoubleResetDetect (NOT DoubleResetDetect_or_)
 * ESP8266HTTPClient
 * ESP8266WebServer
 
