@@ -9,7 +9,7 @@ void setup () {
 
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
   digitalWrite(LED_BUILTIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
-  
+
   pixels.begin(); // This initializes the NeoPixel library.
   pixels.show(); // Initialize all pixels to 'off'
 
@@ -43,7 +43,10 @@ void setup () {
   // Double Reset == Enter Config AP
   if (drd.detect()) {
     Serial.println("Double Reset Detected");
+    wifiManager.setBreakAfterConfig(true);
     wifiManager.startConfigPortal(wm_ssid, wm_password);
+    Serial.println("After Configportal: Save Config");
+    saveConfig();
   } else {
     Serial.println("No Double Reset Detected");
   }
@@ -76,13 +79,13 @@ void loop() {
   int health;
 
   Serial.println("---");
-  Serial.println(offline_mode);
-  if (String(offline_mode) == "y" ) {
+  if (String(offline_mode) == "y" ||  WiFi.status() != WL_CONNECTED) {
     // call the offline mode
     offlineMode();
-    delay(100);    // loop through the offline cycle 
+    delay(100);    // loop through the offline cycle
   } else if (WiFi.status() == WL_CONNECTED) { //Check WiFi connection status
 
+    pixels.setBrightness(255); // set to max brightness. We need to do that because the offline mode changes only the global brightness
     HTTPClient http;  //Declare an object of class HTTPClient
 
     http.begin(tecurl);  //Specify request destination
@@ -163,7 +166,7 @@ void loadConfig() {
           Serial.println("\nparsed json");
           strcpy(tecurl, json["tecurl"]);
           strcpy(offline_mode, json["offline_mode"]);
-          //strcpy(offline_faction, json["offline_faction"]);
+          strcpy(offline_faction, json["offline_faction"]);
         } else {
           Serial.println("failed to load json config");
         }
@@ -183,7 +186,7 @@ void saveConfig() {
   json["tecurl"] = tecurl;
   json["offline_mode"] = offline_mode;
   json["offline_faction"] = offline_faction;
-  
+
   File configFile = SPIFFS.open("/config.json", "w");
   if (!configFile) {
     Serial.println("failed to open config file for writing");
@@ -197,7 +200,7 @@ void saveConfig() {
 }
 
 
-// faction mapping, to get an integer value for the faction. The int will be used to address the 
+// faction mapping, to get an integer value for the faction. The int will be used to address the
 // setPixelColor from the Neopixel lib
 // None: 0, Enl: 1, Res: 2
 int factionMapping(String faction) {
